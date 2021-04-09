@@ -22,7 +22,7 @@ if not os.path.exists('./simp_aut_img'):
 
 
 num_epochs = 50
-batch_size = 12
+batch_size = 256
 learning_rate = 0.1
 
 img_transform = transforms.Compose([
@@ -81,7 +81,7 @@ class autoencoder(nn.Module):
 
 torch.manual_seed(10)
 
-n_bottleneck = 256
+n_bottleneck = 4
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = autoencoder(n_bottleneck).to(device)
 
