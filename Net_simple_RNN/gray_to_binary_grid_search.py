@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 from torch.optim.lr_scheduler import StepLR
-import winsound
+#import winsound
 
 torch.random.manual_seed(10)
 
@@ -74,9 +74,11 @@ hidden_sizes = [32, 32, 32, 32, 32,
                 128, 128, 128, 128, 128]
 layers = [1]
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 for i, hidden_size in enumerate(hidden_sizes):
     for j, num_layers in enumerate(layers):
-        model = Adder(input_size, hidden_size, output_size, num_layers)
+        model = Adder(input_size, hidden_size, output_size, num_layers).to(device)
         model.rnn.weight_hh_l0 = nn.Parameter(1 * torch.randn_like(model.rnn.weight_hh_l0))
         model.rnn.weight_ih_l0 = nn.Parameter(1 * torch.randn_like(model.rnn.weight_ih_l0))
         print('after init: {}'.format(model.rnn.weight_ih_l0))
@@ -84,7 +86,7 @@ for i, hidden_size in enumerate(hidden_sizes):
         print('Hidden size: {}'.format(hidden_size))
         print('Layers: {}'.format(num_layers))
         optimizer = optim.SGD(model.parameters(), lr=learn_rate)
-        #scheduler = StepLR(optimizer, step_size=1000, gamma=0.2)
+        scheduler = StepLR(optimizer, step_size=2500, gamma=0.1)
 
         gradient_sum_hh = 0
         gradient_sum_ih = 0
@@ -99,14 +101,16 @@ for i, hidden_size in enumerate(hidden_sizes):
             x_var = torch.from_numpy(x).unsqueeze(1).float()
             x_var = x_var.unsqueeze(1)
             x_var = x_var.contiguous()
+            x_var = x_var.to(device)
             y_var = torch.from_numpy(y).float()
+            y_var = y_var.to(device)
 
             predicted_output, hidd = model(x_var)
             predicted_output = predicted_output.squeeze(-1)
             loss = lossFunction(predicted_output, y_var)
             loss.backward()
             optimizer.step()
-            #scheduler.step()
+            scheduler.step()
 
             # writer.add_hparams({'lr': learn_rate, 'bsize': 1},
             #                    {'hidden_size': hidden_size, 'layers': num_layers})
@@ -142,8 +146,8 @@ for i, hidden_size in enumerate(hidden_sizes):
                     gradient_sum_ih = gradient_sum_ih + model.rnn.weight_ih_l0.grad[row][col]
 
             if not i%1000:
-                print('epoch {}, loss:{:.4f}'
-                      .format(i, loss.item()))#, scheduler.get_lr()[0]))  ; lr:{:.9f}
+                print('epoch {}, loss:{:.4f}, lr:{:.9f}'
+                      .format(i, loss.item(), scheduler.get_lr()[0]))#, scheduler.get_lr()[0]))  ; lr:{:.9f}
             writer.add_scalar("Grad_SUM/hh", gradient_sum_hh, i)
             writer.add_scalar("Grad_SUM/ih", gradient_sum_ih, i)
 
@@ -172,8 +176,8 @@ for i in range(0, 5):
     print('model output is {}'.format(bits))
     print('predication equals result: {}'.format(result))
 
-duration = 1000  # milliseconds
-freq = 440  # Hz
-winsound.Beep(freq, duration)
+# duration = 1000  # milliseconds
+# freq = 440  # Hz
+# winsound.Beep(freq, duration)
 
 

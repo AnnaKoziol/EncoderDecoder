@@ -1,2 +1,7 @@
 /Net_simple_RNN/runs/
 /Net_simple_RNN/old results/
+data_SingleRow_sweepEachBit/
+data_2pixels_no_incr_neg/
+data_SingleRow_sweepEachBit
+data/
+.idea/
